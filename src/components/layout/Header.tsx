@@ -136,14 +136,14 @@ export default function Header() {
               </button>
             </div>
 
-            {/* Admin Portal Link */}
+            {/* Login / Sign Up Link */}
             <Link
-              href="/admin/login"
-              className="flex items-center gap-1 text-[11px] font-semibold text-emerald-300 hover:text-amber-300 transition-colors border-l border-emerald-800 pl-3"
-              title={language === 'bn' ? 'অ্যাডমিন প্যানেল' : 'Admin Panel'}
+              href="/login"
+              className="flex items-center gap-1 text-[11px] font-semibold text-emerald-300 hover:text-white transition-colors border-l border-emerald-800 pl-3"
+              title={language === 'bn' ? 'লগইন / সাইন আপ' : 'Login / Sign Up'}
             >
-              <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
-              <span>{language === 'bn' ? 'অ্যাডমিন' : 'Admin'}</span>
+              <LogIn className="w-3.5 h-3.5 text-amber-300" />
+              <span>{language === 'bn' ? 'লগইন / সাইন আপ' : 'Login / Sign Up'}</span>
             </Link>
           </div>
         </div>
@@ -309,7 +309,7 @@ export default function Header() {
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-xs font-bold text-emerald-800 transition-all shadow-sm"
                   >
                     <LogIn className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">{language === 'bn' ? 'সাইন ইন' : 'Sign In'}</span>
+                    <span className="hidden sm:inline">{language === 'bn' ? 'লগইন' : 'Login'}</span>
                   </Link>
                 )}
               </div>
@@ -455,11 +455,11 @@ export default function Header() {
                   {t.trackOrder}
                 </Link>
                 <Link
-                  href="/admin/login"
+                  href="/login"
                   className="px-4 py-3 rounded-lg text-sm font-semibold text-emerald-800 bg-emerald-50/70 hover:bg-emerald-100 flex items-center gap-2 transition-colors mt-1"
                 >
-                  <ShieldCheck className="w-4 h-4 text-emerald-700" />
-                  <span>{language === 'bn' ? 'অ্যাডমিন পোর্টাল' : 'Admin Portal'}</span>
+                  <LogIn className="w-4 h-4 text-emerald-700" />
+                  <span>{language === 'bn' ? 'লগইন / সাইন আপ' : 'Login / Sign Up'}</span>
                 </Link>
               </nav>
             </motion.div>
