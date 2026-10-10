@@ -1,0 +1,243 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ===========================================================================
+// Admin
+// ===========================================================================
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String   @default("Admin")
+  role         String   @default("ADMIN") // ADMIN | SUPER_ADMIN
+  isActive     Boolean  @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  statusEvents OrderStatusEvent[]
+  auditLogs    AuditLog[]
+}
+
+// ===========================================================================
+// Catalog
+// ===========================================================================
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  description String?
+  imageUrl    String?
+  sortOrder   Int       @default(0)
+  isActive    Boolean   @default(true)
+  parentId    String?
+  parent      Category? @relation("CategoryToCategory", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryToCategory")
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Product {
+  id             String         @id @default(cuid())
+  name           String
+  slug           String         @unique
+  sku            String?        @unique
+  description    String?
+  richDescription String?
+  price          Int            // Stored in whole taka (BDT)
+  compareAtPrice Int?
+  stockQuantity  Int            @default(0)
+  lowStockThreshold Int        @default(5)
+  status         String         @default("DRAFT") // DRAFT | ACTIVE | ARCHIVED
+  isFeatured     Boolean        @default(false)
+  allowBackorder Boolean        @default(false)
+  weight         String?
+  tags           String?        // JSON array stored as string
+  metaTitle      String?
+  metaDescription String?
+  categoryId     String?
+  category       Category?      @relation(fields: [categoryId], references: [id])
+  images         ProductImage[]
+  variants       ProductVariant[]
+  orderItems     OrderItem[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url       String
+  altText   String?
+  sortOrder Int     @default(0)
+  isPrimary Boolean @default(false)
+}
+
+model ProductVariant {
+  id            String  @id @default(cuid())
+  productId     String
+  product       Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sku           String?
+  name          String  // e.g. "500g", "1kg"
+  priceOverride Int?
+  stockQuantity Int     @default(0)
+  isActive      Boolean @default(true)
+  sortOrder     Int     @default(0)
+  orderItems    OrderItem[]
+}
+
+// ===========================================================================
+// Orders
+// ===========================================================================
+
+model Order {
+  id                   String   @id @default(cuid())
+  publicReference      String   @unique // e.g. SBD-2024-XXXXXXXX
+  idempotencyKey       String   @unique
+
+  // Customer info
+  customerName         String
+  customerPhone        String
+  customerEmail        String?
+
+  // Delivery
+  deliveryAddress      String
+  district             String
+  area                 String?
+  deliveryInstructions String?
+
+  // Financials
+  subtotal             Int
+  discountTotal        Int      @default(0)
+  shippingFee          Int      @default(0)
+  grandTotal           Int
+
+  // Status
+  status               String   @default("PENDING") // PENDING | CONFIRMED | PROCESSING | SHIPPED | DELIVERED | CANCELLED | RETURNED
+  paymentMethod        String   @default("CASH_ON_DELIVERY")
+  paymentStatus        String   @default("UNPAID") // UNPAID | PAID | REFUNDED
+
+  // Coupon
+  couponCode           String?
+  couponId             String?
+  coupon               Coupon?  @relation(fields: [couponId], references: [id])
+
+  // Shipping
+  shippingZoneId       String?
+  shippingZone         ShippingZone? @relation(fields: [shippingZoneId], references: [id])
+
+  // Relations
+  items                OrderItem[]
+  statusEvents         OrderStatusEvent[]
+
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model OrderItem {
+  id                  String   @id @default(cuid())
+  orderId             String
+  order               Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  // Snapshots (preserve historic accuracy)
+  productId           String?
+  product             Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  variantId           String?
+  variant             ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+
+  productNameSnapshot String
+  skuSnapshot         String?
+  variantSnapshot     String?
+  unitPriceSnapshot   Int
+  quantity            Int
+  lineTotal           Int
+}
+
+model OrderStatusEvent {
+  id            String      @id @default(cuid())
+  orderId       String
+  order         Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  actorAdminId  String?
+  actorAdmin    AdminUser?  @relation(fields: [actorAdminId], references: [id])
+  action        String      // e.g. "STATUS_CHANGED", "NOTE_ADDED"
+  previousValue String?
+  newValue      String?
+  note          String?
+  createdAt     DateTime    @default(now())
+}
+
+model AuditLog {
+  id           String     @id @default(cuid())
+  actorAdminId String?
+  actorAdmin   AdminUser? @relation(fields: [actorAdminId], references: [id])
+  action       String
+  targetType   String?    // e.g. "Product", "Order"
+  targetId     String?
+  details      String?    // JSON
+  ipAddress    String?
+  createdAt    DateTime   @default(now())
+}
+
+// ===========================================================================
+// Promotions
+// ===========================================================================
+
+model Coupon {
+  id                 String   @id @default(cuid())
+  code               String   @unique
+  description        String?
+  discountType       String   // PERCENTAGE | FIXED
+  discountValue      Int
+  minimumOrderAmount Int      @default(0)
+  maximumDiscount    Int?     // Cap for percentage discounts
+  startsAt           DateTime?
+  expiresAt          DateTime?
+  usageLimit         Int?
+  usageCount         Int      @default(0)
+  isActive           Boolean  @default(true)
+  orders             Order[]
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+// ===========================================================================
+// Shipping
+// ===========================================================================
+
+model ShippingZone {
+  id                    String  @id @default(cuid())
+  name                  String  // e.g. "Inside Dhaka", "Outside Dhaka"
+  districts             String  // JSON array of district names
+  fee                   Int     // In taka
+  freeShippingThreshold Int?    // Order amount in taka above which shipping is free
+  estimatedDays         String? // e.g. "1-2 days"
+  isActive              Boolean @default(true)
+  orders                Order[]
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+// ===========================================================================
+// Store Settings
+// ===========================================================================
+
+model StoreSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+}
