@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ShieldCheck, ArrowLeft, Loader2, Eye, EyeOff, Mail, Lock, User, Phone, CheckCircle2, AlertCircle } from 'lucide-react'
 import { useLanguageStore, translations } from '@/store/language'
+import { toast } from 'sonner'
 
 function LoginForm() {
   const router = useRouter()
@@ -35,7 +36,9 @@ function LoginForm() {
     try {
       await signIn('google', { callbackUrl })
     } catch (err) {
-      setErrorMessage(language === 'bn' ? 'Google দিয়ে প্রবেশ ব্যর্থ হয়েছে' : 'Google sign in failed')
+      const msg = language === 'bn' ? 'Google দিয়ে প্রবেশ ব্যর্থ হয়েছে' : 'Google sign in failed'
+      setErrorMessage(msg)
+      toast.error(msg)
       setGoogleLoading(false)
     }
   }
@@ -55,13 +58,15 @@ function LoginForm() {
       })
 
       if (res?.error) {
-        setErrorMessage(
+        const msg =
           language === 'bn'
             ? 'ইমেইল বা পাসওয়ার্ড সঠিক নয়'
             : 'Invalid email or password'
-        )
+        setErrorMessage(msg)
+        toast.error(msg)
         setFormLoading(false)
       } else {
+        toast.success(language === 'bn' ? 'সফলভাবে লগইন হয়েছে!' : 'Logged in successfully!')
         router.push(callbackUrl)
         router.refresh()
       }
@@ -77,16 +82,19 @@ function LoginForm() {
         const data = await res.json()
 
         if (!res.ok) {
-          setErrorMessage(data.message || (language === 'bn' ? 'নিবন্ধন ব্যর্থ হয়েছে' : 'Registration failed'))
+          const msg = data.message || (language === 'bn' ? 'নিবন্ধন ব্যর্থ হয়েছে' : 'Registration failed')
+          setErrorMessage(msg)
+          toast.error(msg)
           setFormLoading(false)
           return
         }
 
-        setSuccessMessage(
+        const successMsg =
           language === 'bn'
-            ? 'অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে! প্রবেশ করা হচ্ছে...'
+            ? 'অ্যাকাউন্ট তৈরি সম্পন্ন হয়েছে! লগইন করা হচ্ছে...'
             : 'Account created! Signing you in...'
-        )
+        setSuccessMessage(successMsg)
+        toast.success(successMsg)
 
         // Automatically sign in
         const loginRes = await signIn('credentials', {
@@ -96,18 +104,20 @@ function LoginForm() {
         })
 
         if (!loginRes?.error) {
+          toast.success(language === 'bn' ? 'স্বাগতম!' : 'Welcome!')
           router.push(callbackUrl)
           router.refresh()
         } else {
           setMode('login')
           setFormLoading(false)
         }
-      } catch (err) {
-        setErrorMessage(
+      } catch (err: any) {
+        const msg =
           language === 'bn'
             ? 'সার্ভারে সমস্যা হয়েছে, কিছুক্ষণ পর চেষ্টা করুন'
             : 'Something went wrong. Please try again.'
-        )
+        setErrorMessage(msg)
+        toast.error(msg)
         setFormLoading(false)
       }
     }
@@ -322,6 +332,20 @@ function LoginForm() {
                 </p>
               )}
             </div>
+
+            {/* Error or Success notification right above button */}
+            {errorMessage && (
+              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                <span>{errorMessage}</span>
+              </div>
+            )}
+            {successMessage && (
+              <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+                <span>{successMessage}</span>
+              </div>
+            )}
 
             <button
               type="submit"

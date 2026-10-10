@@ -5,19 +5,33 @@ import { ShoppingBag, TrendingUp, Package, Clock, ArrowRight, Eye, Plus } from '
 export const dynamic = 'force-dynamic'
 
 export default async function AdminDashboardPage() {
-  // Aggregate stats
-  const [totalOrders, pendingOrders, totalProducts, allOrders, recentOrders] =
-    await Promise.all([
-      prisma.order.count(),
-      prisma.order.count({ where: { status: 'PENDING' } }),
-      prisma.product.count({ where: { status: 'ACTIVE' } }),
-      prisma.order.findMany({ select: { grandTotal: true, status: true } }),
-      prisma.order.findMany({
-        take: 8,
-        orderBy: { createdAt: 'desc' },
-        include: { items: true },
-      }),
-    ])
+  let totalOrders = 0
+  let pendingOrders = 0
+  let totalProducts = 0
+  let allOrders: any[] = []
+  let recentOrders: any[] = []
+
+  try {
+    const [fetchedTotalOrders, fetchedPendingOrders, fetchedTotalProducts, fetchedAllOrders, fetchedRecentOrders] =
+      await Promise.all([
+        prisma.order.count(),
+        prisma.order.count({ where: { status: 'PENDING' } }),
+        prisma.product.count({ where: { status: 'ACTIVE' } }),
+        prisma.order.findMany({ select: { grandTotal: true, status: true } }),
+        prisma.order.findMany({
+          take: 8,
+          orderBy: { createdAt: 'desc' },
+          include: { items: true },
+        }),
+      ])
+    totalOrders = fetchedTotalOrders
+    pendingOrders = fetchedPendingOrders
+    totalProducts = fetchedTotalProducts
+    allOrders = fetchedAllOrders
+    recentOrders = fetchedRecentOrders
+  } catch (dbErr) {
+    console.error('Failed to query admin stats from database:', dbErr)
+  }
 
   const totalRevenue = allOrders
     .filter((o) => o.status !== 'CANCELLED')
@@ -157,7 +171,7 @@ export default async function AdminDashboardPage() {
                     </td>
                     <td className="py-3.5 px-4 text-stone-600">{ord.district}</td>
                     <td className="py-3.5 px-4 text-stone-600">
-                      {ord.items.reduce((s, i) => s + i.quantity, 0)} items
+                      {ord.items?.reduce((s: number, i: any) => s + (i.quantity || 1), 0) || 0} items
                     </td>
                     <td className="py-3.5 px-4 font-bold text-stone-900">
                       ৳{ord.grandTotal.toLocaleString('en-BD')}

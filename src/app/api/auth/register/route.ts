@@ -63,8 +63,19 @@ export async function POST(req: Request) {
     )
   } catch (error: any) {
     console.error('Registration error:', error)
+    const isDbError =
+      error?.message?.includes('database') ||
+      error?.message?.includes('connect') ||
+      error?.message?.includes('Prisma') ||
+      error?.message?.includes('ENOTFOUND') ||
+      error?.code === 'P1001'
+
     return NextResponse.json(
-      { message: 'Failed to create account. Please try again.' },
+      {
+        message: isDbError
+          ? 'ডাটাবেজ সংযোগ পাওয়া যায়নি। দয়া করে Vercel Settings-এ Supabase DATABASE_URL যুক্ত করুন।'
+          : error?.message || 'Failed to create account. Please try again.',
+      },
       { status: 500 }
     )
   }
