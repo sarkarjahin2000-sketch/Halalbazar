@@ -63,18 +63,24 @@ export async function POST(req: Request) {
     )
   } catch (error: any) {
     console.error('Registration error:', error)
-    const isDbError =
-      error?.message?.includes('database') ||
-      error?.message?.includes('connect') ||
-      error?.message?.includes('Prisma') ||
-      error?.message?.includes('ENOTFOUND') ||
-      error?.code === 'P1001'
+
+    let hint = 'Vercel Settings-এ DATABASE_URL চেক করুন।'
+    const errText = error?.message || String(error)
+
+    if (!process.env.DATABASE_URL || errText.includes('Environment variable not found')) {
+      hint = 'Vercel-এ DATABASE_URL ভেরিয়েবল যোগ করা হয়নি অথবা Redeploy করা হয়নি।'
+    } else if (errText.includes('does not exist') || errText.includes('relation')) {
+      hint = 'Supabase-এ টেবিল তৈরি করা হয়নি (supabase_setup.sql রান করুন)।'
+    } else if (errText.includes('Authentication failed') || errText.includes('password')) {
+      hint = 'Supabase ডাটাবেজ পাসওয়ার্ড ভুল।'
+    } else if (errText.includes('Can\'t reach') || errText.includes('P1001') || errText.includes('ENOTFOUND')) {
+      hint = 'Supabase সার্ভার কানেক্ট করা যাচ্ছে না (ইউআরএল বা পাসওয়ার্ড চেক করুন)।'
+    }
 
     return NextResponse.json(
       {
-        message: isDbError
-          ? 'ডাটাবেজ সংযোগ পাওয়া যায়নি। দয়া করে Vercel Settings-এ Supabase DATABASE_URL যুক্ত করুন।'
-          : error?.message || 'Failed to create account. Please try again.',
+        message: `ডাটাবেজ সংযোগ ত্রুটি: ${hint}`,
+        debug: errText.slice(0, 150),
       },
       { status: 500 }
     )
