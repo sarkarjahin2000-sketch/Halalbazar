@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { revalidatePath } from 'next/cache'
 
 export async function PATCH(
   request: NextRequest,
@@ -53,6 +54,13 @@ export async function PATCH(
       })
     }
 
+    try {
+      revalidatePath('/')
+      revalidatePath('/products')
+      revalidatePath(`/products/${updated.slug}`)
+      revalidatePath('/categories/[slug]', 'page')
+    } catch {}
+
     return NextResponse.json({ success: true, product: updated })
   } catch (err: any) {
     console.error('Update product error:', err)
@@ -67,6 +75,13 @@ export async function DELETE(
   try {
     const { id } = await params
     await prisma.product.delete({ where: { id } })
+
+    try {
+      revalidatePath('/')
+      revalidatePath('/products')
+      revalidatePath('/categories/[slug]', 'page')
+    } catch {}
+
     return NextResponse.json({ success: true })
   } catch (err: any) {
     console.error('Delete product error:', err)

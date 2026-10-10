@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/db'
 import ProductsCatalogContent from '@/components/product/ProductsCatalogContent'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 60
 
 interface ProductsPageProps {
   searchParams: Promise<{

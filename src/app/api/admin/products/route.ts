@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { revalidatePath } from 'next/cache'
 
 export async function POST(request: NextRequest) {
   try {
@@ -45,6 +46,12 @@ export async function POST(request: NextRequest) {
           : undefined,
       },
     })
+
+    try {
+      revalidatePath('/')
+      revalidatePath('/products')
+      revalidatePath('/categories/[slug]', 'page')
+    } catch {}
 
     return NextResponse.json({ success: true, product: created })
   } catch (err: any) {

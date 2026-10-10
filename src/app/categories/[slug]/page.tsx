@@ -2,7 +2,15 @@ import { prisma } from '@/lib/db'
 import CategoryDetailContent from '@/components/product/CategoryDetailContent'
 import { notFound } from 'next/navigation'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 60
+
+export async function generateStaticParams() {
+  return [
+    { slug: 'honey' },
+    { slug: 'dry-fruits' },
+    { slug: 'spices' },
+  ]
+}
 
 interface CategoryPageProps {
   params: Promise<{

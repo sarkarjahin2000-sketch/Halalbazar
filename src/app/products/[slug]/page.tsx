@@ -2,7 +2,7 @@ import { prisma } from '@/lib/db'
 import ProductDetailPageContent from '@/components/product/ProductDetailPageContent'
 import { notFound } from 'next/navigation'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 60
 
 interface ProductDetailPageProps {
   params: Promise<{
