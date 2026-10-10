@@ -285,8 +285,18 @@ export default function Header() {
                             </div>
                           </div>
                           <div className="p-2">
+                            {(session.user as any)?.role === 'ADMIN' && (
+                              <Link
+                                href="/admin"
+                                onClick={() => setUserMenuOpen(false)}
+                                className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 transition-colors mb-1"
+                              >
+                                🛡️ {language === 'bn' ? 'অ্যাডমিন ড্যাশবোর্ড' : 'Admin Dashboard'}
+                              </Link>
+                            )}
                             <Link
                               href="/track-order"
+                              onClick={() => setUserMenuOpen(false)}
                               className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-stone-700 hover:bg-stone-50 transition-colors"
                             >
                               📦 {language === 'bn' ? 'অর্ডার ট্র্যাক করুন' : 'Track Orders'}
@@ -450,17 +460,43 @@ export default function Header() {
                 <hr className="border-stone-100 my-1" />
                 <Link
                   href="/track-order"
+                  onClick={() => setMenuOpen(false)}
                   className="px-4 py-3 rounded-lg text-sm font-medium text-stone-700 hover:bg-stone-50"
                 >
                   {t.trackOrder}
                 </Link>
-                <Link
-                  href="/login"
-                  className="px-4 py-3 rounded-lg text-sm font-semibold text-emerald-800 bg-emerald-50/70 hover:bg-emerald-100 flex items-center gap-2 transition-colors mt-1"
-                >
-                  <LogIn className="w-4 h-4 text-emerald-700" />
-                  <span>{language === 'bn' ? 'লগইন / সাইন আপ' : 'Login / Sign Up'}</span>
-                </Link>
+
+                {(session?.user as any)?.role === 'ADMIN' && (
+                  <Link
+                    href="/admin"
+                    onClick={() => setMenuOpen(false)}
+                    className="px-4 py-3 rounded-lg text-sm font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 flex items-center gap-2 transition-colors"
+                  >
+                    <span>🛡️ {language === 'bn' ? 'অ্যাডমিন ড্যাশবোর্ড' : 'Admin Dashboard'}</span>
+                  </Link>
+                )}
+
+                {session ? (
+                  <button
+                    onClick={() => {
+                      setMenuOpen(false)
+                      signOut({ callbackUrl: '/' })
+                    }}
+                    className="w-full text-left px-4 py-3 rounded-lg text-sm font-semibold text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition-colors mt-1"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>{language === 'bn' ? 'সাইন আউট' : 'Sign Out'}</span>
+                  </button>
+                ) : (
+                  <Link
+                    href="/login"
+                    onClick={() => setMenuOpen(false)}
+                    className="px-4 py-3 rounded-lg text-sm font-semibold text-emerald-800 bg-emerald-50/70 hover:bg-emerald-100 flex items-center gap-2 transition-colors mt-1"
+                  >
+                    <LogIn className="w-4 h-4 text-emerald-700" />
+                    <span>{language === 'bn' ? 'লগইন / সাইন আপ' : 'Login / Sign Up'}</span>
+                  </Link>
+                )}
               </nav>
             </motion.div>
           )}

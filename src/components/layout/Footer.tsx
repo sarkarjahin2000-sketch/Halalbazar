@@ -188,10 +188,6 @@ export default function Footer() {
           <p>© {year} {t.footerCopyright}</p>
           <div className="flex items-center gap-4 text-[11px]">
             <span>{t.outletCity}</span>
-            <span>•</span>
-            <Link href="/admin/login" className="hover:text-stone-300 transition-colors">
-              {t.adminPortal}
-            </Link>
           </div>
         </div>
       </div>

@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, Suspense } from 'react'
-import { signIn } from 'next-auth/react'
+import { useState, useEffect, Suspense } from 'react'
+import { signIn, useSession } from 'next-auth/react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { ShieldCheck, ArrowLeft, Loader2, Eye, EyeOff, Mail, Lock, User, Phone, CheckCircle2, AlertCircle } from 'lucide-react'
+import { ArrowLeft, Loader2, Eye, EyeOff, Mail, Lock, User, Phone, CheckCircle2, AlertCircle } from 'lucide-react'
 import { useLanguageStore, translations } from '@/store/language'
 import { toast } from 'sonner'
 
@@ -13,6 +13,7 @@ function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get('callbackUrl') || '/'
+  const { data: session, status } = useSession()
 
   const { language } = useLanguageStore()
   const t = translations[language]
@@ -29,6 +30,15 @@ function LoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [phone, setPhone] = useState('')
+
+  // If already authenticated as admin, redirect directly to admin portal
+  useEffect(() => {
+    if (status === 'authenticated') {
+      if ((session?.user as any)?.role === 'ADMIN') {
+        router.replace('/admin')
+      }
+    }
+  }, [status, session, router])
 
   const handleGoogleAuth = async () => {
     setGoogleLoading(true)
@@ -66,8 +76,39 @@ function LoginForm() {
         toast.error(msg)
         setFormLoading(false)
       } else {
+        // Successful login
+        // Check if credentials belong to an ADMIN
+        const normalizedEmail = email.trim().toLowerCase()
+        const masterEmail = 'sarkarjahin2000@gmail.com'
+        let isAdmin = normalizedEmail === masterEmail
+
+        if (!isAdmin) {
+          try {
+            const sessRes = await fetch('/api/auth/session')
+            if (sessRes.ok) {
+              const sessData = await sessRes.json()
+              if (sessData?.user?.role === 'ADMIN') {
+                isAdmin = true
+              }
+            }
+          } catch (sessErr) {
+            console.warn('Session verification error:', sessErr)
+          }
+        }
+
+        if (isAdmin) {
+          toast.success(
+            language === 'bn'
+              ? 'স্বাগতম অ্যাডমিন! অ্যাডমিন পোর্টালে নিয়ে যাওয়া হচ্ছে...'
+              : 'Welcome Admin! Redirecting to Admin Portal...'
+          )
+          router.push('/admin')
+          router.refresh()
+          return
+        }
+
         toast.success(language === 'bn' ? 'সফলভাবে লগইন হয়েছে!' : 'Logged in successfully!')
-        router.push(callbackUrl)
+        router.push(callbackUrl === '/admin' ? '/' : callbackUrl)
         router.refresh()
       }
     } else {
@@ -373,17 +414,6 @@ function LoginForm() {
               className="inline-block mt-1 text-xs font-bold text-emerald-700 hover:text-emerald-900 underline underline-offset-2"
             >
               {language === 'bn' ? 'শপিং করতে থাকুন →' : 'Continue Shopping →'}
-            </Link>
-          </div>
-
-          {/* Discreet Admin Login Link */}
-          <div className="mt-5 pt-4 border-t border-stone-100 text-center">
-            <Link
-              href="/admin/login"
-              className="inline-flex items-center gap-1.5 text-xs text-stone-400 hover:text-emerald-700 font-medium transition-colors"
-            >
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>{language === 'bn' ? 'অ্যাডমিন পোর্টাল' : 'Admin Portal'}</span>
             </Link>
           </div>
         </div>

@@ -16,8 +16,11 @@ import {
   Leaf,
   Menu,
   X,
+  Loader2,
+  ShieldAlert,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSession, signOut } from 'next-auth/react'
 import { toast } from 'sonner'
 
 const navItems = [
@@ -34,20 +37,47 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname()
   const router = useRouter()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { data: session, status } = useSession()
 
-  // Don't wrap login page with sidebar
-  if (pathname === '/admin/login') {
-    return <>{children}</>
-  }
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.replace(`/login?callbackUrl=${encodeURIComponent(pathname)}`)
+    } else if (status === 'authenticated' && (session?.user as any)?.role !== 'ADMIN') {
+      toast.error('অ্যাডমিন অ্যাক্সেস প্রয়োজন (Admin access required)')
+      router.replace('/')
+    }
+  }, [status, session, pathname, router])
 
   const handleLogout = async () => {
     try {
       await fetch('/api/admin/auth/logout', { method: 'POST' })
-      toast.info('Logged out')
-      router.push('/admin/login')
-    } catch {
-      router.push('/admin/login')
-    }
+    } catch {}
+    toast.info('সাইন আউট সম্পন্ন হয়েছে')
+    await signOut({ callbackUrl: '/login' })
+  }
+
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen bg-stone-900 flex flex-col items-center justify-center p-4">
+        <Loader2 className="w-8 h-8 animate-spin text-emerald-500 mb-3" />
+        <p className="text-stone-300 text-sm font-medium">অ্যাডমিন প্রবেশাধিকার যাচাই করা হচ্ছে...</p>
+      </div>
+    )
+  }
+
+  if (status === 'unauthenticated' || (session?.user as any)?.role !== 'ADMIN') {
+    return (
+      <div className="min-h-screen bg-stone-900 flex flex-col items-center justify-center p-4">
+        <div className="bg-white rounded-2xl p-6 max-w-sm w-full text-center shadow-xl">
+          <ShieldAlert className="w-12 h-12 text-rose-500 mx-auto mb-3" />
+          <h2 className="text-base font-bold text-stone-900">প্রবেশাধিকার সংরক্ষিত</h2>
+          <p className="text-xs text-stone-500 mt-1 mb-4">
+            লগইন পেজে রিডাইরেক্ট করা হচ্ছে...
+          </p>
+          <Loader2 className="w-5 h-5 animate-spin text-stone-400 mx-auto" />
+        </div>
+      </div>
+    )
   }
 
   return (
