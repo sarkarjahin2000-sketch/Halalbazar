@@ -13,8 +13,11 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   const { q } = await searchParams
   const query = q?.trim() || ''
 
-  const products = query
-    ? await prisma.product.findMany({
+  let products: any[] = []
+
+  if (query) {
+    try {
+      products = await prisma.product.findMany({
         where: {
           status: 'ACTIVE',
           OR: [
@@ -29,7 +32,10 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         },
         orderBy: { createdAt: 'desc' },
       })
-    : []
+    } catch (error) {
+      console.error('Failed to search products:', error)
+    }
+  }
 
   return <SearchPageContent products={products} query={query} />
 }

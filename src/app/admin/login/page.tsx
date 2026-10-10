@@ -8,8 +8,8 @@ import { toast } from 'sonner'
 
 export default function AdminLoginPage() {
   const router = useRouter()
-  const [email, setEmail] = useState('sarkarjahin2000@gmail.com')
-  const [password, setPassword] = useState('Admin@1234!')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -104,10 +104,13 @@ export default function AdminLoginPage() {
             </div>
           </div>
 
-          <div className="p-3 bg-stone-50 rounded-xl border border-stone-200 text-[11px] text-stone-500">
-            <strong>অ্যাডমিন লগইন তথ্য:</strong><br />
-            Email: <code className="text-stone-800 font-bold">sarkarjahin2000@gmail.com</code><br />
-            Password: <code className="text-stone-800">Admin@1234!</code>
+          <div className="p-3 bg-stone-50 rounded-xl border border-stone-200 text-center">
+            <a
+              href="/login"
+              className="text-xs text-emerald-700 hover:text-emerald-900 font-medium"
+            >
+              ← User Login (Google Sign In)
+            </a>
           </div>
 
           <button

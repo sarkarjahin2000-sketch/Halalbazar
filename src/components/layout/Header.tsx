@@ -1,13 +1,14 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
-import { ShoppingCart, Search, Menu, X, Phone, MapPin, Sparkles, Globe } from 'lucide-react'
+import { ShoppingCart, Search, Menu, X, Phone, MapPin, Sparkles, Globe, User, LogOut, LogIn } from 'lucide-react'
 import { useCartCount, useCartStore } from '@/store/cart'
 import { useLanguageStore, translations } from '@/store/language'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useSession, signOut } from 'next-auth/react'
 
 export default function Header() {
   const pathname = usePathname()
@@ -20,6 +21,9 @@ export default function Header() {
   const [scrolled, setScrolled] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const userMenuRef = useRef<HTMLDivElement>(null)
+  const { data: session } = useSession()
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20)
@@ -29,7 +33,19 @@ export default function Header() {
 
   useEffect(() => {
     setMenuOpen(false)
+    setUserMenuOpen(false)
   }, [pathname])
+
+  // Close user menu on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -198,6 +214,95 @@ export default function Header() {
                 <Globe className="w-3.5 h-3.5 text-emerald-600" />
                 <span>{language === 'bn' ? 'বাংলা' : 'English'}</span>
               </button>
+
+              {/* User Account */}
+              <div className="relative" ref={userMenuRef}>
+                {session?.user ? (
+                  <>
+                    <button
+                      onClick={() => setUserMenuOpen(!userMenuOpen)}
+                      className="flex items-center gap-1.5 p-1.5 rounded-xl hover:bg-stone-50 transition-colors"
+                      aria-label="Account menu"
+                    >
+                      {session.user.image ? (
+                        <Image
+                          src={session.user.image}
+                          alt={session.user.name || 'User'}
+                          width={32}
+                          height={32}
+                          className="rounded-full border-2 border-emerald-500"
+                        />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center border-2 border-emerald-500">
+                          <User className="w-4 h-4 text-emerald-700" />
+                        </div>
+                      )}
+                    </button>
+
+                    {/* User dropdown */}
+                    <AnimatePresence>
+                      {userMenuOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                          transition={{ duration: 0.15 }}
+                          className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-stone-200 overflow-hidden z-50"
+                        >
+                          <div className="p-4 bg-emerald-50 border-b border-emerald-100">
+                            <div className="flex items-center gap-3">
+                              {session.user.image ? (
+                                <Image
+                                  src={session.user.image}
+                                  alt={session.user.name || ''}
+                                  width={40}
+                                  height={40}
+                                  className="rounded-full border-2 border-emerald-500"
+                                />
+                              ) : (
+                                <div className="w-10 h-10 rounded-full bg-emerald-200 flex items-center justify-center">
+                                  <User className="w-5 h-5 text-emerald-700" />
+                                </div>
+                              )}
+                              <div className="min-w-0">
+                                <p className="text-sm font-bold text-stone-900 truncate">
+                                  {session.user.name}
+                                </p>
+                                <p className="text-xs text-stone-500 truncate">
+                                  {session.user.email}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="p-2">
+                            <Link
+                              href="/track-order"
+                              className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-stone-700 hover:bg-stone-50 transition-colors"
+                            >
+                              📦 {language === 'bn' ? 'অর্ডার ট্র্যাক করুন' : 'Track Orders'}
+                            </Link>
+                            <button
+                              onClick={() => signOut({ callbackUrl: '/' })}
+                              className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-rose-600 hover:bg-rose-50 transition-colors"
+                            >
+                              <LogOut className="w-4 h-4" />
+                              {language === 'bn' ? 'সাইন আউট' : 'Sign Out'}
+                            </button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </>
+                ) : (
+                  <Link
+                    href="/login"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-xs font-bold text-emerald-800 transition-all shadow-sm"
+                  >
+                    <LogIn className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">{language === 'bn' ? 'সাইন ইন' : 'Sign In'}</span>
+                  </Link>
+                )}
+              </div>
 
               {/* Search toggle */}
               <button

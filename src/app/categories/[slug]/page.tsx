@@ -13,22 +13,45 @@ interface CategoryPageProps {
 export default async function CategoryPage({ params }: CategoryPageProps) {
   const { slug } = await params
 
-  const category = await prisma.category.findUnique({
-    where: { slug },
-    include: {
-      products: {
-        where: { status: 'ACTIVE' },
-        include: {
-          images: { orderBy: { sortOrder: 'asc' } },
-          category: { select: { name: true, slug: true } },
+  let category: any = null
+
+  try {
+    category = await prisma.category.findUnique({
+      where: { slug },
+      include: {
+        products: {
+          where: { status: 'ACTIVE' },
+          include: {
+            images: { orderBy: { sortOrder: 'asc' } },
+            category: { select: { name: true, slug: true } },
+          },
+          orderBy: { createdAt: 'desc' },
         },
-        orderBy: { createdAt: 'desc' },
       },
-    },
-  })
+    })
+  } catch (error) {
+    console.error(`Failed to load category "${slug}":`, error)
+  }
 
   if (!category) {
-    notFound()
+    // Graceful fallback for categories in header (honey, dry-fruits, spices, etc.)
+    const nameMap: Record<string, string> = {
+      honey: 'Pure Honey',
+      'dry-fruits': 'Dry Fruits',
+      spices: 'Spices',
+    }
+    const fallbackName = nameMap[slug] || slug.replace(/-/g, ' ')
+    return (
+      <CategoryDetailContent
+        category={{
+          id: slug,
+          name: fallbackName,
+          slug,
+          description: '',
+          products: [],
+        }}
+      />
+    )
   }
 
   return <CategoryDetailContent category={category} />

@@ -39,21 +39,30 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   if (sort === 'name-asc') orderBy = { name: 'asc' }
 
   // Fetch data
-  const [products, categories] = await Promise.all([
-    prisma.product.findMany({
-      where,
-      orderBy,
-      include: {
-        images: { orderBy: { sortOrder: 'asc' } },
-        category: { select: { name: true, slug: true } },
-      },
-    }),
-    prisma.category.findMany({
-      where: { isActive: true },
-      include: { _count: { select: { products: true } } },
-      orderBy: { sortOrder: 'asc' },
-    }),
-  ])
+  let products: any[] = []
+  let categories: any[] = []
+
+  try {
+    const [fetchedProducts, fetchedCategories] = await Promise.all([
+      prisma.product.findMany({
+        where,
+        orderBy,
+        include: {
+          images: { orderBy: { sortOrder: 'asc' } },
+          category: { select: { name: true, slug: true } },
+        },
+      }),
+      prisma.category.findMany({
+        where: { isActive: true },
+        include: { _count: { select: { products: true } } },
+        orderBy: { sortOrder: 'asc' },
+      }),
+    ])
+    products = fetchedProducts
+    categories = fetchedCategories
+  } catch (error) {
+    console.error('Failed to load products from database:', error)
+  }
 
   return (
     <ProductsCatalogContent

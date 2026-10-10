@@ -5,6 +5,7 @@ import { Toaster } from "sonner";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import CartDrawer from "@/components/cart/CartDrawer";
+import AuthProvider from "@/components/auth/AuthProvider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -68,16 +69,18 @@ export default function RootLayout({
         suppressHydrationWarning
         className="min-h-screen bg-warm-white text-stone-900 antialiased"
       >
-        <Header />
-        <main className="flex-1">{children}</main>
-        <Footer />
-        <CartDrawer />
-        <Toaster
-          position="top-center"
-          richColors
-          closeButton
-          duration={3000}
-        />
+        <AuthProvider>
+          <Header />
+          <main className="flex-1">{children}</main>
+          <Footer />
+          <CartDrawer />
+          <Toaster
+            position="top-center"
+            richColors
+            closeButton
+            duration={3000}
+          />
+        </AuthProvider>
       </body>
     </html>
   );
