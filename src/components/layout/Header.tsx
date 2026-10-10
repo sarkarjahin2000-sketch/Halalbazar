@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
-import { ShoppingCart, Search, Menu, X, Phone, MapPin, Sparkles, Globe, User, LogOut, LogIn } from 'lucide-react'
+import { ShoppingCart, Search, Menu, X, Phone, MapPin, Sparkles, Globe, User, LogOut, LogIn, ShieldCheck } from 'lucide-react'
 import { useCartCount, useCartStore } from '@/store/cart'
 import { useLanguageStore, translations } from '@/store/language'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -135,6 +135,16 @@ export default function Header() {
                 EN
               </button>
             </div>
+
+            {/* Admin Portal Link */}
+            <Link
+              href="/admin/login"
+              className="flex items-center gap-1 text-[11px] font-semibold text-emerald-300 hover:text-amber-300 transition-colors border-l border-emerald-800 pl-3"
+              title={language === 'bn' ? 'অ্যাডমিন প্যানেল' : 'Admin Panel'}
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
+              <span>{language === 'bn' ? 'অ্যাডমিন' : 'Admin'}</span>
+            </Link>
           </div>
         </div>
       </div>
@@ -443,6 +453,13 @@ export default function Header() {
                   className="px-4 py-3 rounded-lg text-sm font-medium text-stone-700 hover:bg-stone-50"
                 >
                   {t.trackOrder}
+                </Link>
+                <Link
+                  href="/admin/login"
+                  className="px-4 py-3 rounded-lg text-sm font-semibold text-emerald-800 bg-emerald-50/70 hover:bg-emerald-100 flex items-center gap-2 transition-colors mt-1"
+                >
+                  <ShieldCheck className="w-4 h-4 text-emerald-700" />
+                  <span>{language === 'bn' ? 'অ্যাডমিন পোর্টাল' : 'Admin Portal'}</span>
                 </Link>
               </nav>
             </motion.div>
